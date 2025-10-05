@@ -72,7 +72,7 @@ export default function AdminDashboard() {
       // Carregar analytics dos últimos 30 dias
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      const analyticsData = await getAnalytics('1', thirtyDaysAgo.toISOString())
+      const analyticsData = await getAnalytics('550e8400-e29b-41d4-a716-446655440000', thirtyDaysAgo.toISOString())
 
       if (profileData) setProfile(profileData)
       if (linksData) setLinks(linksData)
