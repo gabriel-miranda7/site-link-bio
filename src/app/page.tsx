@@ -6,61 +6,6 @@ import { Profile, Link } from '@/lib/types'
 import { ExternalLink, Instagram, Twitter, Youtube, Github, Linkedin, Mail, Globe, Heart } from 'lucide-react'
 import Image from 'next/image'
 
-// Dados de exemplo para demonstração
-const defaultProfile: Profile = {
-  id: '1',
-  name: 'Seu Nome',
-  subtitle: 'Criador de Conteúdo',
-  profile_image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
-  background_color: '#1a1a1a',
-  background_image: '',
-  text_color: '#ffffff',
-  button_color: '#333333',
-  button_text_color: '#ffffff',
-  title: 'Meus Links',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
-}
-
-const defaultLinks: Link[] = [
-  {
-    id: '1',
-    profile_id: '1',
-    title: 'Instagram',
-    url: 'https://instagram.com',
-    description: 'Siga-me no Instagram',
-    icon: 'instagram',
-    order_index: 1,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    profile_id: '1',
-    title: 'YouTube',
-    url: 'https://youtube.com',
-    description: 'Meu canal no YouTube',
-    icon: 'youtube',
-    order_index: 2,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: '3',
-    profile_id: '1',
-    title: 'Site Pessoal',
-    url: 'https://example.com',
-    description: 'Visite meu site oficial',
-    icon: 'globe',
-    order_index: 3,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-]
-
 const iconMap = {
   instagram: Instagram,
   twitter: Twitter,
@@ -74,49 +19,100 @@ const iconMap = {
 }
 
 export default function Home() {
-  const [profile, setProfile] = useState<Profile>(defaultProfile)
-  const [links, setLinks] = useState<Link[]>(defaultLinks)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [links, setLinks] = useState<Link[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadProfile()
+    loadData()
     // Rastrear visualização da página
-    trackEvent('1', 'page_view')
+    trackPageView()
   }, [])
 
-  async function loadProfile() {
+  async function loadData() {
     try {
-      // Tentar carregar dados do Supabase
-      const { data: profileData } = await supabase
+      // Carregar perfil
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
+        .limit(1)
         .single()
 
-      const { data: linksData } = await supabase
+      if (profileError) {
+        console.error('Erro ao carregar perfil:', profileError)
+      } else {
+        setProfile(profileData)
+      }
+
+      // Carregar links ativos
+      const { data: linksData, error: linksError } = await supabase
         .from('links')
         .select('*')
         .eq('is_active', true)
-        .order('order_index')
+        .order('order_index', { ascending: true })
 
-      if (profileData) setProfile(profileData)
-      if (linksData && linksData.length > 0) setLinks(linksData)
+      if (linksError) {
+        console.error('Erro ao carregar links:', linksError)
+      } else {
+        setLinks(linksData || [])
+      }
     } catch (error) {
-      console.log('Usando dados de exemplo')
+      console.error('Erro geral ao carregar dados:', error)
     } finally {
       setLoading(false)
     }
   }
 
+  async function trackPageView() {
+    try {
+      if (profile?.id) {
+        await trackEvent(profile.id, 'page_view')
+      } else {
+        // Se não temos o profile ainda, usar ID padrão
+        await trackEvent('550e8400-e29b-41d4-a716-446655440000', 'page_view')
+      }
+    } catch (error) {
+      console.error('Erro ao rastrear page view:', error)
+    }
+  }
+
   const handleLinkClick = async (link: Link) => {
-    // Rastrear clique no link
-    await trackEvent(profile.id, 'link_click', link.id)
-    // Abrir link em nova aba
-    window.open(link.url, '_blank')
+    try {
+      // Rastrear clique no link
+      const profileId = profile?.id || '550e8400-e29b-41d4-a716-446655440000'
+      await trackEvent(profileId, 'link_click', link.id)
+      
+      // Abrir link em nova aba
+      window.open(link.url, '_blank')
+    } catch (error) {
+      console.error('Erro ao rastrear clique:', error)
+      // Mesmo com erro no tracking, abrir o link
+      window.open(link.url, '_blank')
+    }
   }
 
   const getIcon = (iconName: string) => {
     const IconComponent = iconMap[iconName as keyof typeof iconMap] || ExternalLink
     return <IconComponent className="w-6 h-6" />
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Perfil não encontrado</h1>
+          <p className="text-gray-400">Configure seu perfil no painel administrativo</p>
+        </div>
+      </div>
+    )
   }
 
   const backgroundStyle = profile.background_image 
@@ -127,14 +123,6 @@ export default function Home() {
         backgroundRepeat: 'no-repeat'
       }
     : { backgroundColor: profile.background_color }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-      </div>
-    )
-  }
 
   return (
     <div 
@@ -159,7 +147,7 @@ export default function Home() {
           <div className="mb-6">
             <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white/20 shadow-lg">
               <Image
-                src={profile.profile_image}
+                src={profile.profile_image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'}
                 alt={profile.name}
                 width={96}
                 height={96}
@@ -189,30 +177,47 @@ export default function Home() {
 
         {/* Links */}
         <div className="space-y-4">
-          {links.map((link) => (
-            <button
-              key={link.id}
-              onClick={() => handleLinkClick(link)}
-              className="w-full p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm border border-white/10"
-              style={{ 
-                backgroundColor: profile.button_color + '80',
-                color: profile.button_text_color 
-              }}
-            >
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  {getIcon(link.icon || 'external')}
+          {links.length > 0 ? (
+            links.map((link) => (
+              <button
+                key={link.id}
+                onClick={() => handleLinkClick(link)}
+                className="w-full p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm border border-white/10"
+                style={{ 
+                  backgroundColor: profile.button_color + '80',
+                  color: profile.button_text_color 
+                }}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    {getIcon(link.icon || 'external')}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold text-lg">{link.title}</h3>
+                    {link.description && (
+                      <p className="text-sm opacity-80">{link.description}</p>
+                    )}
+                  </div>
+                  <ExternalLink className="w-5 h-5 opacity-60" />
                 </div>
-                <div className="flex-1 text-left">
-                  <h3 className="font-semibold text-lg">{link.title}</h3>
-                  {link.description && (
-                    <p className="text-sm opacity-80">{link.description}</p>
-                  )}
-                </div>
-                <ExternalLink className="w-5 h-5 opacity-60" />
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p 
+                className="text-lg opacity-80"
+                style={{ color: profile.text_color }}
+              >
+                Nenhum link disponível
+              </p>
+              <p 
+                className="text-sm opacity-60 mt-2"
+                style={{ color: profile.text_color }}
+              >
+                Configure seus links no painel administrativo
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
