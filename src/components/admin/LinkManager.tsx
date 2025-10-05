@@ -22,7 +22,8 @@ import {
   Linkedin,
   Mail,
   Globe,
-  Heart
+  Heart,
+  Image as ImageIcon
 } from 'lucide-react'
 
 interface LinkManagerProps {
@@ -53,7 +54,8 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
     title: '',
     url: '',
     description: '',
-    icon: 'external'
+    icon: 'external',
+    background_image: ''
   })
 
   const handleAddLink = async () => {
@@ -74,6 +76,7 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
         url: newLink.url,
         description: newLink.description || null,
         icon: newLink.icon,
+        background_image: newLink.background_image || null,
         order_index: maxOrder + 1,
         is_active: true
       }
@@ -87,7 +90,7 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
       if (error) throw error
 
       onLinksChange([...links, data])
-      setNewLink({ title: '', url: '', description: '', icon: 'external' })
+      setNewLink({ title: '', url: '', description: '', icon: 'external', background_image: '' })
       setShowAddForm(false)
       setMessage('Link adicionado com sucesso!')
       onRefresh()
@@ -221,19 +224,33 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ícone</label>
-              <select
-                value={newLink.icon}
-                onChange={(e) => setNewLink(prev => ({ ...prev, icon: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                {iconOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Ícone</label>
+                <select
+                  value={newLink.icon}
+                  onChange={(e) => setNewLink(prev => ({ ...prev, icon: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                >
+                  {iconOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center space-x-2">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Imagem de Fundo (opcional)</span>
+                </label>
+                <Input
+                  value={newLink.background_image}
+                  onChange={(e) => setNewLink(prev => ({ ...prev, background_image: e.target.value }))}
+                  placeholder="https://i.imgur.com/exemplo.jpg"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2">
@@ -241,7 +258,7 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
                 variant="outline" 
                 onClick={() => {
                   setShowAddForm(false)
-                  setNewLink({ title: '', url: '', description: '', icon: 'external' })
+                  setNewLink({ title: '', url: '', description: '', icon: 'external', background_image: '' })
                 }}
               >
                 Cancelar
@@ -281,6 +298,12 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
                           <p className="text-sm text-gray-600">{link.description}</p>
                         )}
                         <p className="text-xs text-gray-400">{link.url}</p>
+                        {link.background_image && (
+                          <p className="text-xs text-blue-600 flex items-center space-x-1">
+                            <ImageIcon className="w-3 h-3" />
+                            <span>Com imagem de fundo</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -367,7 +390,8 @@ function EditLinkForm({
     title: link.title,
     url: link.url,
     description: link.description || '',
-    icon: link.icon || 'external'
+    icon: link.icon || 'external',
+    background_image: link.background_image || ''
   })
 
   const handleSave = () => {
@@ -403,19 +427,33 @@ function EditLinkForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Ícone</label>
-        <select
-          value={formData.icon}
-          onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-          className="w-full p-2 border border-gray-300 rounded-md"
-        >
-          {iconOptions.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Ícone</label>
+          <select
+            value={formData.icon}
+            onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            {iconOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center space-x-2">
+            <ImageIcon className="w-4 h-4" />
+            <span>Imagem de Fundo</span>
+          </label>
+          <Input
+            value={formData.background_image}
+            onChange={(e) => setFormData(prev => ({ ...prev, background_image: e.target.value }))}
+            placeholder="https://i.imgur.com/exemplo.jpg"
+          />
+        </div>
       </div>
 
       <div className="flex justify-end space-x-2">
