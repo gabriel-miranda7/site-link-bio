@@ -41,7 +41,7 @@ export default function Analytics({ analytics: initialAnalytics, links }: Analyt
   const handleFilterAnalytics = async () => {
     setLoading(true)
     try {
-      const filteredData = await getAnalytics('1', startDate, endDate + 'T23:59:59')
+      const filteredData = await getAnalytics('550e8400-e29b-41d4-a716-446655440000', startDate, endDate + 'T23:59:59')
       setAnalytics(filteredData)
     } catch (error) {
       console.error('Erro ao filtrar analytics:', error)
