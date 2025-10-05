@@ -69,15 +69,13 @@ export default function LinkManager({ links, onLinksChange, onRefresh }: LinkMan
       const maxOrder = Math.max(...links.map(l => l.order_index), 0)
       
       const linkData = {
-        profile_id: '1',
+        profile_id: '550e8400-e29b-41d4-a716-446655440000',
         title: newLink.title,
         url: newLink.url,
         description: newLink.description || null,
         icon: newLink.icon,
         order_index: maxOrder + 1,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        is_active: true
       }
 
       const { data, error } = await supabase
