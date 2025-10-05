@@ -38,6 +38,11 @@ export default function Analytics({ analytics: initialAnalytics, links }: Analyt
     setStartDate(thirtyDaysAgo.toISOString().split('T')[0])
   }, [])
 
+  // Atualizar analytics quando initialAnalytics mudar
+  useEffect(() => {
+    setAnalytics(initialAnalytics)
+  }, [initialAnalytics])
+
   const handleFilterAnalytics = async () => {
     setLoading(true)
     try {
@@ -235,7 +240,7 @@ export default function Analytics({ analytics: initialAnalytics, links }: Analyt
             {linkStats.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum dado de cliques ainda</p>
+                <p>Nenhum link cadastrado ainda</p>
               </div>
             )}
           </div>
