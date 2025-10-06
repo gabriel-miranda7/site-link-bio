@@ -115,28 +115,21 @@ export default function Home() {
     )
   }
 
-  // Determinar estilo de fundo (gradiente, imagem ou cor sólida)
-  const getBackgroundStyle = () => {
-    if (profile.background_gradient) {
-      return { background: profile.background_gradient }
-    } else if (profile.background_image) {
-      return { 
+  const backgroundStyle = profile.background_image 
+    ? { 
         backgroundImage: `url(${profile.background_image})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }
-    } else {
-      return { backgroundColor: profile.background_color }
-    }
-  }
+    : { backgroundColor: profile.background_color }
 
   return (
     <div 
       className="min-h-screen py-8 px-4"
-      style={getBackgroundStyle()}
+      style={backgroundStyle}
     >
-      {(profile.background_image || profile.background_gradient) && (
+      {profile.background_image && (
         <div className="absolute inset-0 bg-black/50"></div>
       )}
       
@@ -189,24 +182,13 @@ export default function Home() {
               <button
                 key={link.id}
                 onClick={() => handleLinkClick(link)}
-                className="w-full p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm border border-white/10 relative overflow-hidden"
+                className="w-full p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm border border-white/10"
                 style={{ 
-                  backgroundColor: link.background_image ? 'transparent' : profile.button_color + '80',
+                  backgroundColor: profile.button_color + '80',
                   color: profile.button_text_color 
                 }}
               >
-                {/* Imagem de fundo do link (opcional) */}
-                {link.background_image && (
-                  <>
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                      style={{ backgroundImage: `url(${link.background_image})` }}
-                    />
-                    <div className="absolute inset-0 bg-black/60"></div>
-                  </>
-                )}
-                
-                <div className="relative z-10 flex items-center space-x-4">
+                <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     {getIcon(link.icon || 'external')}
                   </div>
@@ -244,7 +226,7 @@ export default function Home() {
             className="text-xs opacity-60"
             style={{ color: profile.text_color }}
           >
-            Criado com Lasy.Ai
+            Criado com ❤️
           </p>
         </div>
       </div>
