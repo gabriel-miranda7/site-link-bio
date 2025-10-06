@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Save, Upload, Palette, Gradient } from 'lucide-react'
+import { Save, Upload, Palette } from 'lucide-react'
 import Image from 'next/image'
 
 interface ProfileSettingsProps {
@@ -16,43 +16,16 @@ interface ProfileSettingsProps {
   onRefresh: () => void
 }
 
-const gradientPresets = [
-  { name: 'Sunset', value: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)' },
-  { name: 'Ocean', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { name: 'Forest', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
-  { name: 'Purple', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { name: 'Pink', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { name: 'Blue', value: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-  { name: 'Dark', value: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)' },
-  { name: 'Gold', value: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)' }
-]
-
 export default function ProfileSettings({ profile, onProfileChange, onRefresh }: ProfileSettingsProps) {
   const [formData, setFormData] = useState(profile)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [backgroundType, setBackgroundType] = useState<'color' | 'image' | 'gradient'>(
-    formData.background_gradient ? 'gradient' : 
-    formData.background_image ? 'image' : 'color'
-  )
 
   const handleInputChange = (field: keyof Profile, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
-  }
-
-  const handleBackgroundTypeChange = (type: 'color' | 'image' | 'gradient') => {
-    setBackgroundType(type)
-    // Limpar outros tipos de fundo
-    if (type === 'color') {
-      setFormData(prev => ({ ...prev, background_image: '', background_gradient: '' }))
-    } else if (type === 'image') {
-      setFormData(prev => ({ ...prev, background_gradient: '' }))
-    } else if (type === 'gradient') {
-      setFormData(prev => ({ ...prev, background_image: '' }))
-    }
   }
 
   const handleSave = async () => {
@@ -77,20 +50,6 @@ export default function ProfileSettings({ profile, onProfileChange, onRefresh }:
       setMessage('Erro ao salvar perfil')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const getPreviewStyle = () => {
-    if (backgroundType === 'gradient' && formData.background_gradient) {
-      return { background: formData.background_gradient }
-    } else if (backgroundType === 'image' && formData.background_image) {
-      return {
-        backgroundImage: `url(${formData.background_image})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }
-    } else {
-      return { backgroundColor: formData.background_color }
     }
   }
 
@@ -176,46 +135,8 @@ export default function ProfileSettings({ profile, onProfileChange, onRefresh }:
             Customize as cores e aparência da sua página
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Tipo de Fundo */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Tipo de Fundo</label>
-            <div className="flex space-x-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="backgroundType"
-                  value="color"
-                  checked={backgroundType === 'color'}
-                  onChange={() => handleBackgroundTypeChange('color')}
-                />
-                <span className="text-sm">Cor Sólida</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="backgroundType"
-                  value="gradient"
-                  checked={backgroundType === 'gradient'}
-                  onChange={() => handleBackgroundTypeChange('gradient')}
-                />
-                <span className="text-sm">Gradiente</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="backgroundType"
-                  value="image"
-                  checked={backgroundType === 'image'}
-                  onChange={() => handleBackgroundTypeChange('image')}
-                />
-                <span className="text-sm">Imagem</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Configurações de Fundo */}
-          {backgroundType === 'color' && (
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Cor do Fundo</label>
               <div className="flex space-x-2">
@@ -233,59 +154,7 @@ export default function ProfileSettings({ profile, onProfileChange, onRefresh }:
                 />
               </div>
             </div>
-          )}
 
-          {backgroundType === 'gradient' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Gradiente Personalizado</label>
-                <Input
-                  value={formData.background_gradient || ''}
-                  onChange={(e) => handleInputChange('background_gradient', e.target.value)}
-                  placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                />
-                <p className="text-xs text-gray-500">
-                  Use CSS gradient syntax ou escolha um preset abaixo
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Presets de Gradiente</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {gradientPresets.map((preset) => (
-                    <button
-                      key={preset.name}
-                      type="button"
-                      onClick={() => handleInputChange('background_gradient', preset.value)}
-                      className="h-12 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors relative overflow-hidden"
-                      style={{ background: preset.value }}
-                    >
-                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        <span className="text-white text-xs font-medium">{preset.name}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {backgroundType === 'image' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Imagem de Fundo</label>
-              <Input
-                value={formData.background_image || ''}
-                onChange={(e) => handleInputChange('background_image', e.target.value)}
-                placeholder="https://imgur.com/sua-imagem-de-fundo.jpg"
-              />
-              <p className="text-xs text-gray-500">
-                URL da imagem que será usada como fundo
-              </p>
-            </div>
-          )}
-
-          {/* Cores dos Elementos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Cor do Texto</label>
               <div className="flex space-x-2">
@@ -322,7 +191,7 @@ export default function ProfileSettings({ profile, onProfileChange, onRefresh }:
               </div>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <label className="text-sm font-medium">Cor do Texto dos Botões</label>
               <div className="flex space-x-2">
                 <Input
@@ -340,6 +209,18 @@ export default function ProfileSettings({ profile, onProfileChange, onRefresh }:
               </div>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Imagem de Fundo (opcional)</label>
+            <Input
+              value={formData.background_image || ''}
+              onChange={(e) => handleInputChange('background_image', e.target.value)}
+              placeholder="https://imgur.com/sua-imagem-de-fundo.jpg"
+            />
+            <p className="text-xs text-gray-500">
+              Deixe em branco para usar apenas a cor de fundo
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -353,14 +234,15 @@ export default function ProfileSettings({ profile, onProfileChange, onRefresh }:
         </CardHeader>
         <CardContent>
           <div 
-            className="max-w-sm mx-auto p-6 rounded-xl relative overflow-hidden"
-            style={getPreviewStyle()}
+            className="max-w-sm mx-auto p-6 rounded-xl"
+            style={{
+              backgroundColor: formData.background_color,
+              backgroundImage: formData.background_image ? `url(${formData.background_image})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
           >
-            {(backgroundType === 'image' || backgroundType === 'gradient') && (
-              <div className="absolute inset-0 bg-black/50"></div>
-            )}
-            
-            <div className="relative z-10 text-center space-y-4">
+            <div className="text-center space-y-4">
               <h1 
                 className="text-lg font-bold"
                 style={{ color: formData.text_color }}
