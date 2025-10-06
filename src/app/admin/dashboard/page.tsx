@@ -61,14 +61,12 @@ export default function AdminDashboard() {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', '550e8400-e29b-41d4-a716-446655440000')
         .single()
 
       // Carregar links
       const { data: linksData } = await supabase
         .from('links')
         .select('*')
-        .eq('profile_id', '550e8400-e29b-41d4-a716-446655440000')
         .order('order_index')
 
       // Carregar analytics dos últimos 30 dias
@@ -76,15 +74,9 @@ export default function AdminDashboard() {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       const analyticsData = await getAnalytics('550e8400-e29b-41d4-a716-446655440000', thirtyDaysAgo.toISOString())
 
-      console.log('Dados carregados:', {
-        profile: profileData,
-        links: linksData,
-        analytics: analyticsData
-      })
-
       if (profileData) setProfile(profileData)
       if (linksData) setLinks(linksData)
-      setAnalytics(analyticsData || [])
+      setAnalytics(analyticsData)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
     }
@@ -255,22 +247,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Debug Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Debug - Dados Carregados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <p><strong>Analytics:</strong> {analytics.length} eventos</p>
-                  <p><strong>Links:</strong> {links.length} links</p>
-                  <p><strong>Profile:</strong> {profile ? 'Carregado' : 'Não encontrado'}</p>
-                  <p><strong>Visualizações:</strong> {totalViews}</p>
-                  <p><strong>Cliques:</strong> {totalClicks}</p>
                 </div>
               </CardContent>
             </Card>
