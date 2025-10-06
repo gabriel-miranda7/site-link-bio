@@ -5,7 +5,6 @@ export interface Profile {
   profile_image: string
   background_color: string
   background_image?: string
-  background_gradient?: string
   text_color: string
   button_color: string
   button_text_color: string
@@ -21,7 +20,6 @@ export interface Link {
   url: string
   description?: string
   icon?: string
-  background_image?: string
   order_index: number
   is_active: boolean
   created_at: string
