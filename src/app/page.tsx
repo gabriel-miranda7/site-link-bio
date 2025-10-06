@@ -3,20 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, trackEvent } from '@/lib/supabase'
 import { Profile, Link } from '@/lib/types'
-import { ExternalLink, Instagram, Twitter, Youtube, Github, Linkedin, Mail, Globe, Heart } from 'lucide-react'
-import Image from 'next/image'
-
-const iconMap = {
-  instagram: Instagram,
-  twitter: Twitter,
-  youtube: Youtube,
-  github: Github,
-  linkedin: Linkedin,
-  mail: Mail,
-  globe: Globe,
-  heart: Heart,
-  external: ExternalLink
-}
+import { ExternalLink } from 'lucide-react'
 
 export default function Home() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -25,208 +12,138 @@ export default function Home() {
 
   useEffect(() => {
     loadData()
-    // Rastrear visualização da página
-    trackPageView()
   }, [])
 
-  async function loadData() {
+  const loadData = async () => {
     try {
       // Carregar perfil
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .limit(1)
         .single()
 
-      if (profileError) {
-        console.error('Erro ao carregar perfil:', profileError)
-      } else {
-        setProfile(profileData)
-      }
-
       // Carregar links ativos
-      const { data: linksData, error: linksError } = await supabase
+      const { data: linksData } = await supabase
         .from('links')
         .select('*')
         .eq('is_active', true)
-        .order('order_index', { ascending: true })
+        .order('order_index')
 
-      if (linksError) {
-        console.error('Erro ao carregar links:', linksError)
-      } else {
-        setLinks(linksData || [])
+      if (profileData) {
+        setProfile(profileData)
+        // Rastrear visualização da página
+        trackEvent(profileData.id, 'page_view')
       }
+      if (linksData) setLinks(linksData)
     } catch (error) {
-      console.error('Erro geral ao carregar dados:', error)
+      console.error('Erro ao carregar dados:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  async function trackPageView() {
-    try {
-      if (profile?.id) {
-        await trackEvent(profile.id, 'page_view')
-      } else {
-        // Se não temos o profile ainda, usar ID padrão
-        await trackEvent('550e8400-e29b-41d4-a716-446655440000', 'page_view')
-      }
-    } catch (error) {
-      console.error('Erro ao rastrear page view:', error)
-    }
-  }
-
   const handleLinkClick = async (link: Link) => {
+    if (!profile) return
+
     try {
       // Rastrear clique no link
-      const profileId = profile?.id || '550e8400-e29b-41d4-a716-446655440000'
-      await trackEvent(profileId, 'link_click', link.id)
-      
+      await trackEvent(profile.id, 'link_click', link.id)
       // Abrir link em nova aba
       window.open(link.url, '_blank')
     } catch (error) {
       console.error('Erro ao rastrear clique:', error)
-      // Mesmo com erro no tracking, abrir o link
+      // Ainda abrir o link mesmo se o rastreamento falhar
       window.open(link.url, '_blank')
     }
   }
 
-  const getIcon = (iconName: string) => {
-    const IconComponent = iconMap[iconName as keyof typeof iconMap] || ExternalLink
-    return <IconComponent className="w-6 h-6" />
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Perfil não encontrado</h1>
-          <p className="text-gray-400">Configure seu perfil no painel administrativo</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Perfil não encontrado</h1>
+          <p className="text-gray-600">Configure seu perfil no painel administrativo.</p>
         </div>
       </div>
     )
   }
 
-  const backgroundStyle = profile.background_image 
-    ? { 
-        backgroundImage: `url(${profile.background_image})`,
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-4"
+      style={{
+        backgroundColor: profile.background_gradient ? undefined : profile.background_color,
+        backgroundImage: profile.background_gradient || (profile.background_image ? `url(${profile.background_image})` : undefined),
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }
-    : { backgroundColor: profile.background_color }
-
-  return (
-    <div 
-      className="min-h-screen py-8 px-4"
-      style={backgroundStyle}
+        color: profile.text_color
+      }}
     >
-      {profile.background_image && (
-        <div className="absolute inset-0 bg-black/50"></div>
-      )}
-      
-      <div className="relative z-10 max-w-md mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 
-            className="text-2xl font-bold mb-6"
-            style={{ color: profile.text_color }}
-          >
-            {profile.title}
-          </h1>
-          
-          {/* Profile Image */}
-          <div className="mb-6">
-            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white/20 shadow-lg">
-              <Image
-                src={profile.profile_image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'}
-                alt={profile.name}
-                width={96}
-                height={96}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Name and Subtitle */}
-          <h2 
-            className="text-xl font-semibold mb-2"
-            style={{ color: profile.text_color }}
-          >
-            {profile.name}
-          </h2>
-          <p 
-            className="text-sm opacity-80"
-            style={{ color: profile.text_color }}
-          >
-            {profile.subtitle}
-          </p>
+      <div className="max-w-md w-full space-y-8">
+        {/* Profile Section */}
+        <div className="text-center">
+          {profile.profile_image && (
+            <img
+              src={profile.profile_image}
+              alt={profile.name}
+              className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-white/20"
+            />
+          )}
+          <h1 className="text-2xl font-bold mb-2">{profile.name}</h1>
+          <p className="text-lg opacity-90">{profile.subtitle}</p>
         </div>
 
-        {/* Links */}
+        {/* Links Section */}
         <div className="space-y-4">
-          {links.length > 0 ? (
-            links.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => handleLinkClick(link)}
-                className="w-full p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm border border-white/10"
-                style={{ 
-                  backgroundColor: profile.button_color + '80',
-                  color: profile.button_text_color 
-                }}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {getIcon(link.icon || 'external')}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <h3 className="font-semibold text-lg">{link.title}</h3>
-                    {link.description && (
-                      <p className="text-sm opacity-80">{link.description}</p>
-                    )}
-                  </div>
-                  <ExternalLink className="w-5 h-5 opacity-60" />
+          {links.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => handleLinkClick(link)}
+              className="w-full p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm border border-white/10"
+              style={{
+                backgroundColor: link.background_image ? 'transparent' : profile.button_color + '80',
+                backgroundImage: link.background_image ? `url(${link.background_image})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                color: profile.button_text_color
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <ExternalLink className="w-5 h-5" />
+                  <span className="font-medium">{link.title}</span>
                 </div>
-              </button>
-            ))
-          ) : (
+                <ExternalLink className="w-4 h-4 opacity-60" />
+              </div>
+              {link.description && (
+                <p className="text-sm opacity-80 mt-1 text-left">{link.description}</p>
+              )}
+            </button>
+          ))}
+
+          {links.length === 0 && (
             <div className="text-center py-8">
-              <p 
-                className="text-lg opacity-80"
-                style={{ color: profile.text_color }}
-              >
-                Nenhum link disponível
-              </p>
-              <p 
-                className="text-sm opacity-60 mt-2"
-                style={{ color: profile.text_color }}
-              >
-                Configure seus links no painel administrativo
-              </p>
+              <p className="text-lg opacity-60">Nenhum link ativo ainda</p>
+              <p className="text-sm opacity-40 mt-2">Adicione links no painel administrativo</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="text-center mt-12">
-          <p 
+          <p
             className="text-xs opacity-60"
             style={{ color: profile.text_color }}
           >
-            Criado com ❤️
+            Criado com Lasy.Ai
           </p>
         </div>
       </div>
